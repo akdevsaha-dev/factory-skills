@@ -39,11 +39,15 @@ After installing, they run `/init-backend`, then `/init-database` again.
 
 ## Step 2: Choose the option
 
-If the user has not said, ask:
+Always ask the user before setting anything up. Never pick an option on your own, even when only one fits the stack or the project already has Supabase files.
+
+Skip the question only when the user's own message already names the option, such as "/init-database with prisma".
+
+Ask:
 
 "How do you want to connect your database?"
 
-Show only the options valid for the stack:
+Always show all three options:
 
 | Option | Stacks | What the user provides |
 | --- | --- | --- |
@@ -51,7 +55,9 @@ Show only the options valid for the stack:
 | Drizzle | Node.js | A Postgres `DATABASE_URL` from any provider |
 | Supabase | Node.js, Python, Go | A Supabase project, found through the Supabase MCP or given by the user |
 
-Python and Go backends only get Supabase. If the user asks for Prisma or Drizzle on them, explain that those are Node.js tools.
+On a Python or Go backend, still show Prisma and Drizzle, marked as Node.js only. If the user picks one of them, explain that it cannot run in this backend and ask again.
+
+Wait for the user's answer before Step 3.
 
 ## Step 3: Read the reference and set it up
 
