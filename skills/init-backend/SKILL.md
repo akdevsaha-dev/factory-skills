@@ -33,11 +33,20 @@ Do not ask again if the user's request already specifies the stack.
 
 ## Step 3: Determine the project location
 
-Use the current directory if it is empty or clearly intended as the backend root.
+Always generate the backend inside a `backend/` directory at the root of the current working directory, even if the current directory is empty.
 
-If this is an existing monorepo, prefer a `backend/` directory unless the repository has another established convention.
+- Create `backend/` if it does not exist.
+- Every file in the project structure (`src/`, `tests/`, `package.json`, `pyproject.toml`, `go.mod`, `.env.example`, etc.) goes inside `backend/`, never at the repository root.
+- Run all install, build, test, and startup commands from inside `backend/`.
 
-Ask only when the correct destination is ambiguous.
+Only deviate from `backend/` when:
+
+1. The user explicitly names a different directory, or
+2. The repository already has an established backend directory convention (for example `server/` or `apps/api/`). In that case, follow the existing convention.
+
+If the current directory is itself already named `backend`, use it directly instead of nesting another `backend/` inside it.
+
+Ask only when the correct destination is genuinely ambiguous.
 
 ## Step 4: Read the relevant instructions
 

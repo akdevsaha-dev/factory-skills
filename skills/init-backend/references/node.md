@@ -12,6 +12,8 @@
 
 ## Project structure
 
+All paths below are relative to the `backend/` directory. Create `backend/` first and generate every file inside it. Do not place `src/`, `tests/`, or config files at the repository root.
+
 backend/
 ├── src/
 │ ├── config/
@@ -39,6 +41,8 @@ backend/
 └── README.md
 
 ## Dependencies
+
+Run every command in this file from inside the `backend/` directory (`mkdir -p backend && cd backend && npm init -y`).
 
 Install:
 

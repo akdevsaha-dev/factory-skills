@@ -13,6 +13,8 @@ Avoid third-party dependencies for the initial scaffold unless they provide a cl
 
 ## Project structure
 
+All paths below are relative to the `backend/` directory. Create `backend/` first and generate every file inside it. Do not place `src/`, `tests/`, or config files at the repository root.
+
 backend/
 ├── cmd/
 │ └── api/
@@ -38,6 +40,8 @@ backend/
 └── README.md
 
 ## Initialization
+
+Run every command in this file from inside the `backend/` directory (`mkdir -p backend && cd backend`).
 
 Initialize a Go module using:
 

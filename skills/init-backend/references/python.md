@@ -51,6 +51,8 @@ Use compatible stable versions, and commit `uv.lock`.
 
 ## Initialization
 
+Run every command in this section from inside the `backend/` directory (`mkdir -p backend && cd backend`).
+
 Initialize the project with uv.
 
 Use the equivalent of:
@@ -75,6 +77,8 @@ Do not mix the `src.main` package style with an
 `app.main --app-dir src` layout.
 
 ## Project structure
+
+All paths below are relative to the `backend/` directory. Create `backend/` first and generate every file inside it. Do not place `src/`, `tests/`, or config files at the repository root.
 
 ```text
 backend/
