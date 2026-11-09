@@ -1,13 +1,13 @@
-# Drizzle Migrations
+# Drizzle
 
-Node.js only. Read `postgres-node.md` first. This file supplies the schema, client, and migration details.
+Node.js only. Works with any Postgres provider.
 
-Drizzle keeps the schema in TypeScript and generates plain SQL migrations you can read and review.
+## Install
 
-## Dependencies
+From the backend directory:
 
 ```bash
-npm install drizzle-orm postgres
+npm install drizzle-orm postgres dotenv
 npm install -D drizzle-kit
 ```
 
@@ -15,50 +15,59 @@ npm install -D drizzle-kit
 
 ```text
 backend/
+├── drizzle.config.ts
 ├── src/
+│   ├── config/
+│   │   └── env.ts          # DATABASE_URL
 │   └── db/
-│       ├── client.ts
-│       └── schema/
-│           └── index.ts        # no tables yet
-├── drizzle/                    # empty until the first migration
-└── drizzle.config.ts
+│       ├── index.ts        # single drizzle client
+│       └── schema.ts       # empty, tables go here later
+├── .env
+└── .env.example
 ```
-
-## Client
-
-`src/db/client.ts`:
-
-- Create one `postgres()` client with `max` from config, plus `idle_timeout` and `connect_timeout`.
-- Wrap it in `drizzle(client, { schema })`.
-- Export `db` and `closeDb()`, which calls `client.end()`.
-- On Supabase's transaction pooler (port 6543), pass `prepare: false`.
-
-## Schema
-
-Create `src/db/schema/index.ts` with a comment explaining that each table lives in its own file in this directory and is re-exported here. Do not define any tables.
-
-Do not run `drizzle-kit generate`. There is nothing to generate yet.
-
-Document for later: one file per table using `pgTable`, inferred types via `$inferSelect` and `$inferInsert`, and `{ withTimezone: true }` on every timestamp.
-
-## Configuration
 
 `drizzle.config.ts`:
 
 ```ts
+import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './src/db/schema/index.ts',
+  schema: './src/db/schema.ts',
   out: './drizzle',
   dbCredentials: { url: process.env.DATABASE_URL! },
-  strict: true,
-  verbose: true,
 });
 ```
 
-On Supabase, `DATABASE_URL` here must be the direct connection on port 5432, not the pooler.
+`src/config/env.ts`: add `DATABASE_URL: z.string().url()` to the existing Zod schema, or create the file with that schema if it does not exist.
+
+`src/db/index.ts`:
+
+```ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { env } from '../config/env.js';
+import * as schema from './schema.js';
+
+const client = postgres(env.DATABASE_URL, { prepare: false });
+export const db = drizzle(client, { schema });
+```
+
+Match the existing import style of the backend for file extensions.
+
+`src/db/schema.ts`: a comment saying tables go here. No tables.
+
+## Environment
+
+`.env` and `.env.example`:
+
+```text
+# Paste your Postgres connection string from Neon, Aiven, Supabase, RDS, or any provider.
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+```
+
+Tell the user to replace the placeholder in `.env`.
 
 ## Scripts
 
@@ -68,36 +77,16 @@ Add to `package.json`:
 - `db:migrate`: `drizzle-kit migrate`
 - `db:studio`: `drizzle-kit studio`
 
-## Workflow for the first and later migrations
+## Verify
 
-Document this in the README. Do not perform it during setup.
+With a real `DATABASE_URL`, run a one-off `select 1` through the `db` client, then delete the script.
 
-1. Edit the schema in `src/db/schema/`.
-2. `npm run db:generate -- --name <snake_case_description>`
-3. Review the SQL in `drizzle/`. Fix renames that were generated as drop and create.
-4. `npm run db:migrate`
-5. Commit the schema change and the generated files together.
+## First migration
 
-Do not use `drizzle-kit push` outside throwaway local experiments. It bypasses migration history.
-
-Drizzle Kit has no down migrations. To undo, write a new forward migration.
-
-Things Drizzle cannot express in the TypeScript schema, such as RLS policies, triggers, and functions, go in a custom migration created with `drizzle-kit generate --custom --name <name>`.
-
-## Query-only mode with native Supabase migrations
-
-When `supabase-migrations.md` owns the schema:
-
-- Install `drizzle-orm postgres` and `drizzle-kit`.
-- Run `npx drizzle-kit pull` against the local Supabase database to generate the schema files.
-- Re-run `pull` after every new Supabase migration.
-- Remove `db:generate` and `db:migrate` scripts. Keep only `db:pull`.
-- Restrict `pull` to the `public` schema with `schemaFilter: ['public']` in `drizzle.config.ts`.
-
-## Verification
+Tell the user:
 
 ```bash
-npx drizzle-kit check
+# add a table to src/db/schema.ts, then
+npm run db:generate -- --name <description>
+npm run db:migrate
 ```
-
-Confirm `drizzle/` contains no migration files.

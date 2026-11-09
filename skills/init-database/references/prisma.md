@@ -1,118 +1,103 @@
-# Prisma Migrations
+# Prisma
 
-Node.js only. Read `postgres-node.md` first. This file supplies the schema, client, and migration details.
+Node.js only. Works with any Postgres provider.
 
-Prisma keeps the schema in `schema.prisma` and generates SQL migrations in timestamped folders.
+## Install
 
-## Version
-
-Use the current stable Prisma major version and check its docs for configuration changes before generating files.
-
-Prisma 7 and later differ from Prisma 6 in ways that matter here:
-
-- The datasource URL moves from `schema.prisma` into `prisma.config.ts`.
-- The `prisma-client` generator requires an explicit `output` path.
-- The runtime client uses a driver adapter such as `@prisma/adapter-pg`.
-
-Detect the installed version and follow the matching style. Do not mix them.
-
-## Dependencies
+From the backend directory:
 
 ```bash
-npm install @prisma/client @prisma/adapter-pg pg
+npm install @prisma/client @prisma/adapter-pg pg dotenv
 npm install -D prisma @types/pg
 npx prisma init --datasource-provider postgresql
 ```
 
-Drop `@prisma/adapter-pg` and `pg` if the installed Prisma version does not use driver adapters.
+Use the current stable Prisma version. Prisma 7 and later read the database URL from `prisma.config.ts` and need the `@prisma/adapter-pg` driver adapter. If an older major version is installed, put the URL in the `datasource` block instead and drop the adapter.
 
 ## Files
 
 ```text
 backend/
 ├── prisma/
-│   └── schema.prisma           # generator and datasource only, no models
-├── prisma.config.ts            # Prisma 7+
-└── src/
-    └── db/
-        ├── client.ts
-        └── generated/          # Prisma 7+ client output, gitignored
+│   └── schema.prisma       # generator + datasource, no models
+├── prisma.config.ts
+├── src/
+│   ├── config/
+│   │   └── env.ts          # DATABASE_URL
+│   └── db/
+│       └── prisma.ts       # single PrismaClient
+├── .env
+└── .env.example
 ```
-
-## Schema
 
 `prisma/schema.prisma`:
 
 ```prisma
 generator client {
   provider = "prisma-client"
-  output   = "../src/db/generated"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
-
 ```
 
-Do not add any `model` blocks. Do not run `prisma migrate dev` during setup, because it would create an empty migration. `prisma/migrations/` is created by the user's first migration.
+No `model` blocks. Add `src/generated/` to `.gitignore`.
 
-Run `prisma generate` once so the client import works. If the installed version refuses to generate without models, skip it and note it in the completion report.
+`prisma.config.ts`:
 
-Document these rules in the README for later models:
+```ts
+import 'dotenv/config';
+import { defineConfig, env } from 'prisma/config';
 
-- Use `@@map` and `@map` so tables and columns are `snake_case` plural in the database while models stay `PascalCase` in TypeScript.
-- Use `@db.Timestamptz` on every `DateTime`.
-- Use `@db.Uuid` for UUID columns.
-- Add `@@index` for every foreign key.
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: { path: 'prisma/migrations' },
+  datasource: { url: env('DATABASE_URL') },
+});
+```
 
-## Client
+`src/config/env.ts`: add `DATABASE_URL: z.string().url()` to the existing Zod schema, or create the file with that schema if it does not exist.
 
-`src/db/client.ts`:
+`src/db/prisma.ts`: create one `PrismaClient` with `new PrismaPg({ connectionString: env.DATABASE_URL })` as the adapter. Export it as `prisma`. Import `PrismaClient` from the generated output path.
 
-- Create one `PrismaClient` for the process, using the driver adapter when required.
-- Export `prisma` and `closeDb()`, which calls `prisma.$disconnect()`.
-- On Supabase's transaction pooler (port 6543), add `pgbouncer=true` to the runtime URL or disable prepared statements in the adapter.
+## Environment
 
-## Supabase connection URLs
+`.env` and `.env.example`:
 
-Prisma migrations need the direct connection. The application should use the pooler.
+```text
+# Paste your Postgres connection string from Neon, Aiven, Supabase, RDS, or any provider.
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+```
 
-- Migrations: `DATABASE_URL` on port 5432, read by `prisma.config.ts` or the `directUrl` field in older versions.
-- Runtime: `DATABASE_POOL_URL` on port 6543, passed to the adapter or the `url` field.
+Tell the user to replace the placeholder in `.env`. On Supabase, use the direct or session connection on port 5432 for migrations.
 
 ## Scripts
 
 Add to `package.json`:
 
+- `db:generate`: `prisma generate`
 - `db:migrate`: `prisma migrate dev`
 - `db:deploy`: `prisma migrate deploy`
-- `db:reset`: `prisma migrate reset`
-- `db:generate`: `prisma generate`
 - `db:studio`: `prisma studio`
-- `postinstall`: `prisma generate`
 
-## Workflow for the first and later migrations
-
-Document this in the README. Do not perform it during setup.
-
-1. Edit `prisma/schema.prisma`.
-2. `npx prisma migrate dev --name <snake_case_description>`
-3. Review `prisma/migrations/<timestamp>_<name>/migration.sql`.
-4. Commit the schema and migration folder together.
-5. Production and CI run `prisma migrate deploy` only. Never `migrate dev` against a shared database.
-
-Prisma has no down migrations. To undo, write a new forward migration.
-
-Things Prisma cannot express, such as RLS policies, triggers, and functions, go in a migration created with `prisma migrate dev --create-only --name <name>`, then edited by hand before applying.
-
-Do not use `prisma db push` outside throwaway local experiments.
-
-## Verification
+## Verify
 
 ```bash
 npx prisma validate
-npx prisma migrate status
+npx prisma generate
 ```
 
-Confirm `prisma/schema.prisma` has no models and no migrations exist.
+With a real `DATABASE_URL`, also run `npx prisma migrate status`. It connects without changing anything.
+
+If `prisma generate` refuses to run with no models, skip it and say so.
+
+## First migration
+
+Tell the user:
+
+```bash
+# add a model to prisma/schema.prisma, then
+npx prisma migrate dev --name <description>
+```

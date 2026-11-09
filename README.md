@@ -9,7 +9,7 @@ Build consistent, maintainable software with Claude Code, Codex, and other compa
 | Skill         | Description                                                       |
 | ------------- | ----------------------------------------------------------------- |
 | init-backend  | Initialize a backend with Node.js, Python, or Go                  |
-| init-database | Add PostgreSQL or Supabase with migrations to an existing backend |
+| init-database | Connect a backend to a database with Prisma, Drizzle, or Supabase |
 
 ## Installation
 

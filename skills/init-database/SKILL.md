@@ -1,233 +1,89 @@
 ---
 name: init-database
-description: Set up PostgreSQL or Supabase in an existing backend without creating any tables, including connection management, configuration, migration tooling with native Supabase SQL, Drizzle, Prisma, Alembic, or goose, a readiness check, and local development. Use when the user asks to initialize, set up, add, or configure a database or migrations.
+description: Connect an existing backend to a database using Prisma, Drizzle, or Supabase. Sets up config, the client, and environment variables without creating tables. Use when the user asks to initialize, set up, add, or connect a database.
 ---
 
 # Initialize Database
 
-You are a senior backend engineer responsible for adding a safe, maintainable database layer to an existing backend.
+Set up the database connection in an existing backend. The user owns the database itself; this skill only wires the backend to it.
 
-## Scope
-
-This skill sets up the database. It does not design the schema.
-
-It creates:
-
-- The connection pool or client, with lifecycle management
-- Database configuration and `.env.example` entries
-- The chosen migration tool, configured, with an empty migrations directory
-- A database readiness check
-- Local development setup
-- A connectivity test
-
-It does not create:
-
-- Tables, columns, indexes, policies, triggers, or functions
-- Migration files
-- ORM models or schema definitions for tables
-- Repositories or query functions for tables
-- Seed data
-
-Create any of these only when the user explicitly asks for them in the same request. Do not offer a sample `users` table. The user writes the first migration when they are ready.
-
-This skill does not create a backend. If no backend exists, tell the user to run `npx skills add akdevsaha-dev/factory-skills --skill init-backend` first, or offer to do so before continuing.
+Do not create tables, models, migrations, seed data, Docker files, or local database containers.
 
 ## Step 1: Inspect the project
 
-Before making changes:
-
-1. Locate the backend. Prefer `backend/`, then any directory containing `package.json`, `pyproject.toml`, or `go.mod` with an HTTP server.
-2. Detect the stack from its files:
-   - `package.json` with TypeScript → Node.js
-   - `pyproject.toml` with FastAPI → Python
+1. Find the backend. Prefer `backend/`. If there is no backend, follow "No backend found" below and stop until one exists.
+2. Detect the stack:
+   - `package.json` → Node.js
+   - `pyproject.toml` → Python
    - `go.mod` → Go
-3. Check for an existing database layer: `src/db/`, `internal/db/`, `drizzle/`, `drizzle.config.ts`, `prisma/schema.prisma`, `alembic/`, `migrations/`, `supabase/migrations/`, or a `DATABASE_URL` in `.env.example`.
-4. Never overwrite existing code without explicit approval.
-5. If a database layer already exists, ask whether to extend it or stop.
+3. If Prisma, Drizzle, or Supabase is already set up, ask whether to continue before changing anything.
 
-## Step 2: Choose the database
+### No backend found
 
-If the user has not specified a provider, ask:
+If the `init-backend` skill is available in this session, ask:
 
-"Which database would you like to set up?"
+"No backend found. Do you want me to create one with `/init-backend` first?"
 
-Options:
+If they say yes, run it, then continue this skill inside the new `backend/`.
 
-1. PostgreSQL (self-hosted, Docker, Neon, RDS, or any plain Postgres)
-2. Supabase (hosted Postgres with Auth, Storage, and the Supabase client)
+If the `init-backend` skill is not available, tell the user it can be installed, and ask whether to run the install command for them:
 
-Do not ask again if the user's request already specifies the provider.
+```bash
+npx skills add akdevsaha-dev/factory-skills --skill init-backend
+```
 
-Infer the provider from existing project files when possible: a `supabase/` directory, `SUPABASE_URL` in `.env.example`, or a Supabase SDK dependency means Supabase.
+Always show the command and the repository link, so they can run it themselves:
+https://github.com/akdevsaha-dev/factory-skills
 
-Supabase is still PostgreSQL. Schema, migrations, and SQL conventions in this skill apply to both. The difference is how the application connects and which tooling owns migrations.
+After installing, they run `/init-backend`, then `/init-database` again.
 
-## Step 3: Choose the migration tool
+## Step 2: Choose the option
 
-Exactly one tool owns the schema. Running two migration tools against the same database causes drift.
+If the user has not said, ask:
 
-Available tools depend on the stack and provider:
+"How do you want to connect your database?"
 
-| Tool | Migrations live in | Stacks | Providers |
-| --- | --- | --- | --- |
-| Native Supabase migrations | `supabase/migrations/<timestamp>_<name>.sql` | Node.js, Python, Go | Supabase only |
-| Drizzle | `drizzle/` | Node.js only | PostgreSQL, Supabase |
-| Prisma | `prisma/migrations/` | Node.js only | PostgreSQL, Supabase |
-| Alembic | `alembic/versions/` | Python only | PostgreSQL, Supabase |
-| goose | `migrations/` | Go only | PostgreSQL, Supabase |
+Show only the options valid for the stack:
 
-If the user has not specified a tool, ask:
+| Option | Stacks | What the user provides |
+| --- | --- | --- |
+| Prisma | Node.js | A Postgres `DATABASE_URL` from any provider, such as Neon, Aiven, Supabase, or RDS |
+| Drizzle | Node.js | A Postgres `DATABASE_URL` from any provider |
+| Supabase | Node.js, Python, Go | A Supabase project, found through the Supabase MCP or given by the user |
 
-"Which tool should own your database migrations?"
+Python and Go backends only get Supabase. If the user asks for Prisma or Drizzle on them, explain that those are Node.js tools.
 
-Show only the options valid for the detected stack and provider, with the recommended one first:
+## Step 3: Read the reference and set it up
 
-- Supabase, any stack: Native Supabase migrations (recommended), then the stack's tools
-- Node.js + PostgreSQL: Drizzle (recommended), Prisma
-- Python + PostgreSQL: Alembic
-- Go + PostgreSQL: goose
+- Prisma: `references/prisma.md`
+- Drizzle: `references/drizzle.md`
+- Supabase: `references/supabase.md`
 
-When only one option is valid, use it and state the choice instead of asking.
+Every option follows the same rules:
 
-Do not ask again if the user's request already names a tool.
+- **Config module.** Put database settings in the backend's existing config module. If it does not exist, create it:
+  - Node.js: `src/config/env.ts`
+  - Python: `src/core/config.py`
+  - Go: `internal/config/config.go`
+- **Client module.** Create one client in the backend's `db` folder and reuse it everywhere:
+  - Node.js: `src/db/`
+  - Python: `src/db/`
+  - Go: `internal/db/`
+- **Environment files.** Write `.env` and `.env.example` in the backend directory. `.env` holds real values, or a placeholder when the user has not given them yet. `.env.example` always holds placeholders. Make sure `.gitignore` contains `.env`.
+- **No secrets in output.** Never print keys or connection strings back to the user, and never write them anywhere except `.env`.
 
-Infer the tool from existing files before asking:
+## Step 4: Verify
 
-- `supabase/migrations/*.sql` present → native Supabase migrations
-- `prisma/schema.prisma` → Prisma
-- `drizzle.config.ts` → Drizzle
-- `alembic.ini` → Alembic
-- `.sql` files with `-- +goose Up` → goose
+1. Install dependencies with the stack's package manager.
+2. Run the backend's existing type check or lint.
+3. If real credentials are in `.env`, run the connection check from the reference. If only placeholders are there, skip it and say so.
 
-If the user asks for Drizzle or Prisma on a Python or Go backend, explain that they are Node.js tools and offer native Supabase migrations or the stack's own tool instead.
+Do not claim a check passed unless it ran.
 
-The migration tool and the query library are separate decisions. With native Supabase migrations the application still needs a way to query: plain driver SQL, a query-only ORM, or the Supabase SDK. The stack and Supabase references cover this.
+## Step 5: Report
 
-## Step 4: Determine the location
+Tell the user:
 
-All database code goes inside the existing backend directory, following that stack's established layout. Never create a top-level `database/` folder at the repository root.
-
-Per stack, for application code:
-
-- Node.js: `src/db/` for the client
-- Python: `src/db/` for the engine, session, and declarative base
-- Go: `internal/db/` for the pool and queries
-
-Per migration tool, for schema files:
-
-- Native Supabase: `supabase/` inside the backend directory, with `config.toml`, `migrations/`, and `seed.sql`
-- Drizzle: `src/db/schema/index.ts` with no tables, `drizzle/`, and `drizzle.config.ts`
-- Prisma: `prisma/schema.prisma` with no models, and `prisma.config.ts` when the Prisma version uses it
-- Alembic: `alembic/` and `alembic.ini`
-- goose: `migrations/`
-
-## Step 5: Read the relevant instructions
-
-Read, in order:
-
-1. The stack reference:
-   - Node.js: `references/postgres-node.md`
-   - Python: `references/postgres-python.md`
-   - Go: `references/postgres-go.md`
-2. The provider reference, if Supabase was selected: `references/supabase.md`
-3. The migration tool reference:
-   - Native Supabase migrations: `references/supabase-migrations.md`
-   - Drizzle: `references/drizzle.md`
-   - Prisma: `references/prisma.md`
-   - Alembic and goose: covered inside the Python and Go stack references
-
-When the migration tool reference conflicts with the stack reference on schema or migration details, the migration tool reference wins.
-
-Read the selected references before generating files.
-
-## Step 6: Generate the database layer
-
-Create, at minimum:
-
-- Connection: a single pool or engine, created once, configured from the environment, closed on shutdown
-- Configuration: `DATABASE_URL` added to the existing settings module and `.env.example`
-- Migrations: the chosen tool configured, with an empty migrations directory and its commands wired into the project scripts or README
-- Health: extend the existing health check with a database readiness check, or add `GET /health/ready`, without breaking the existing `GET /health`
-- Tests: a connectivity test that runs `select 1` against a real database when one is available and skips cleanly when it is not
-- Local development: a `docker-compose.yml` with a Postgres service for plain PostgreSQL, or Supabase CLI local setup for Supabase
-
-Do not create empty files to satisfy a directory structure.
-
-## Step 7: Schema conventions
-
-Do not create tables. Document these conventions in the backend README so the first migration the user writes follows them:
-
-- Use `snake_case` for tables and columns.
-- Use plural table names.
-- Use `timestamptz`, never `timestamp`.
-- Use `uuid` or `bigint identity` primary keys, never `serial`.
-- Add `not null` by default and relax it deliberately.
-- Add foreign keys with explicit `on delete` behavior.
-- Add indexes for every foreign key and every column used in a `where` clause.
-- Put constraints in the database, not only in application code.
-
-## Step 8: Migrations
-
-- Every schema change is a migration. Never alter the database by hand or with an ORM `create_all` outside tests.
-- Migrations must be committed to the repository.
-- Generated migrations must be reviewed before being accepted. Do not trust auto-generated diffs blindly.
-- Migrations run explicitly through a project script, not automatically on application startup, unless the user asks for startup migrations and understands the tradeoff.
-- Prefer additive, backwards-compatible changes. Split destructive changes into separate migrations.
-
-## Step 9: Install dependencies
-
-Use the stack's package manager from inside the backend directory:
-
-- Node.js: npm
-- Python: uv
-- Go: go modules
-
-Use compatible stable versions. Update lock files.
-
-## Step 10: Verify
-
-Run all relevant checks:
-
-1. Dependency installation
-2. Formatting, linting, and type checking as the backend already defines them
-3. Start a local database with Docker Compose or the Supabase CLI, if Docker is available
-4. Confirm the migration tool connects and reports an empty history:
-   - Native Supabase: `supabase migration list`
-   - Drizzle: `drizzle-kit check`
-   - Prisma: `prisma validate`, then `prisma migrate status`
-   - Alembic: `alembic current`
-   - goose: `goose status`
-5. Confirm no tables were created in the `public` schema
-6. Run automated tests
-7. Start the application and request the health endpoint
-8. Confirm the readiness check reports the database as reachable
-
-If Docker or network access is unavailable, run everything that does not need a live database and report exactly which steps were skipped.
-
-Do not claim a command passed unless it actually ran successfully.
-
-## Step 11: Completion report
-
-Report:
-
-- Selected provider, stack, and migration tool
-- Files created and modified, confirming no tables or migration files were created
-- Installed dependencies
-- Environment variables added
-- Commands to start the local database, create the first migration, apply migrations, and run tests
-- Tests and checks executed
-- Steps that could not be verified and why
-
-## Engineering principles
-
-- One connection pool per process, created once, closed on shutdown.
-- Never create database clients at module import time when that complicates startup or testing.
-- Never log connection strings, passwords, or service role keys.
-- Never commit `.env`. Always update `.env.example`.
-- Use parameterized queries only. Never interpolate values into SQL.
-- Keep SQL and query code out of HTTP handlers and services. Repositories talk to the database.
-- Use transactions for multi-statement writes.
-- Use the least privileged credential the application needs.
-- Set statement and connection timeouts.
-- Preserve existing repository conventions.
-- Never describe a schema as production-ready without verification.
+- What was set up and which files changed
+- Exactly which values they still need to paste into `.env`, and where to find them
+- The commands for their first migration

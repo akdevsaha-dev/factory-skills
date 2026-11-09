@@ -1,123 +1,212 @@
 # Supabase
 
-Read the matching stack reference first. This file replaces its connection, migration, and local-development sections. Everything else in the stack reference still applies.
+Works with Node.js, Python, and Go. The backend talks to Supabase through the Supabase SDK, modeled on:
+https://github.com/akdevsaha-dev/Truepantry/tree/main/backend
 
-Supabase is hosted PostgreSQL. Every schema convention in `SKILL.md` applies unchanged. Like the rest of this skill, this file sets up Supabase and creates no tables.
+## Values needed
 
-## Choose the access pattern
+| Variable | What it is | Where it comes from |
+| --- | --- | --- |
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` | Supabase MCP, or the user |
+| `SUPABASE_KEY` | The project's secret key, `sb_secret_...`, or the legacy `service_role` key | Always the user, from Project Settings → API Keys |
 
-Ask, unless the user already said:
+The secret key bypasses Row Level Security. It stays in the backend `.env` only. Never use it in a frontend.
 
-"How should the backend talk to Supabase?"
+## Step 1: Check for the Supabase MCP
 
-1. Direct PostgreSQL connection. The backend uses the stack's normal driver and ORM against the Supabase connection string. Use this when the backend owns all data access and you want the stack reference's repository layer as written.
-2. Supabase client SDK. The backend uses `@supabase/supabase-js`, `supabase-py`, or `supabase-go` with the service role key. Use this when the project also needs Supabase Auth, Storage, or Realtime from the server.
+Look at your available tools for Supabase MCP tools, such as ones named `list_projects`, `get_project_url`, or `execute_sql` from a Supabase server.
 
-Both are valid. Do not mix them for the same table without a reason.
+### If the MCP is available
 
-With a direct connection, keep the stack reference's repository layer and swap only the URL, migrations, and local setup described below.
+1. List the projects and ask the user which one to use. If there is only one, confirm it. Always include "Create a new project" as an option.
+2. If there are no projects, or the user picks "Create a new project", follow "Creating a project" below.
+3. Get the project URL from the MCP and write it to `SUPABASE_URL` in `.env`.
+4. Ask the user to paste the secret key. The MCP cannot read secret keys. Until they paste it, write the placeholder.
+5. Run `select 1` with the MCP's SQL tool to confirm the project is reachable.
 
-With the SDK, the repository layer wraps the SDK client instead of the ORM. Keep the same function names and keep services unaware of which one is underneath.
+If the MCP is connected to one project only, skip the listing and use that project.
 
-## Connection strings
+#### Creating a project
 
-Supabase exposes several URLs. Use the right one:
+1. Suggest a name from the project itself: the repository folder name, or the `name` in `package.json`, `pyproject.toml`, or `go.mod`. For example, a repository called `Truepantry` suggests `truepantry`. Ask the user to confirm or change it.
+2. List the organizations. If there is more than one, ask which to use.
+3. Pick the region closest to the user, or ask if unsure.
+4. Check the cost with the MCP and show it to the user. Create the project only after they confirm.
+5. Create the project and wait until its status is active, checking it with the MCP. This usually takes a minute or two.
+6. Continue from step 3 above with the new project.
 
-- Migrations and local tooling: the direct connection on port 5432.
-- Application runtime, especially serverless or many short-lived connections: the Supavisor transaction pooler on port 6543. Disable prepared statements when using it. For asyncpg set `statement_cache_size=0`; for postgres.js set `prepare: false`; for pgx use `default_query_exec_mode=simple_protocol` in the URL.
+Never create a project without the user's confirmation.
 
-Add to `.env.example`:
+### If the MCP is not available
+
+Ask the user for:
+
+- The project URL, or the project ref
+- The secret key
+
+If they do not have a project yet, tell them to create one at https://supabase.com/dashboard/new, named after the project, such as `truepantry`. Then ask for the URL and key again.
+
+If they do not have the values ready, write placeholders and tell them where to find both: the Supabase dashboard, Project Settings → API Keys and Data API.
+
+## Step 2: Supabase CLI folder
+
+From the backend directory, if the Supabase CLI or `npx` is available:
+
+```bash
+supabase init
+```
+
+This creates `supabase/config.toml`, `supabase/.gitignore`, and `supabase/migrations/`. Leave `migrations/` empty.
+
+If you know the project ref, tell the user to link it once:
+
+```bash
+supabase link --project-ref <project-ref>
+```
+
+If the CLI is not available, skip this step and include the commands in the report.
+
+## Step 3: Environment
+
+`.env` gets the real values, or placeholders. `.env.example` always gets placeholders:
 
 ```text
-# Supabase
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-# Direct connection, used by migrations
-DATABASE_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
-# Pooled connection, used by the application
-DATABASE_POOL_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_KEY=your-secret-key
 ```
 
-Adjust the scheme to the stack driver, for example `postgresql+asyncpg://`.
+Make sure `.gitignore` contains `.env`.
 
-Only add the SDK keys when the SDK path is chosen.
+## Step 4: Config and client per stack
 
-## Key handling
+### Python
 
-- The service role key bypasses Row Level Security. It belongs only in server-side environment variables. Never ship it to a browser, mobile app, or public repository.
-- The anon key is safe to expose to clients but is not needed by a pure backend. Omit it unless the server performs user-scoped operations.
-- Never log any key or connection string.
+```text
+backend/
+├── src/
+│   ├── core/
+│   │   └── config.py
+│   └── db/
+│       └── supabase.py
+└── supabase/
+```
 
-## Supabase CLI
-
-Install the CLI and initialize inside the backend directory:
+Install:
 
 ```bash
-npx supabase init
+uv add supabase pydantic-settings
 ```
 
-This creates `supabase/config.toml` and `supabase/migrations/`.
+`src/core/config.py`: add the two fields to the existing `Settings`. If the file does not exist, create it:
 
-For local development:
+```python
+from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "API"
+    environment: str = "development"
+
+    supabase_url: str
+    supabase_key: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+```
+
+`src/db/supabase.py`:
+
+```python
+from functools import lru_cache
+
+from supabase import Client, create_client
+
+from src.core.config import get_settings
+
+
+@lru_cache
+def get_supabase_client() -> Client:
+    settings = get_settings()
+    return create_client(settings.supabase_url, settings.supabase_key)
+```
+
+Call `get_supabase_client()` inside functions or through `Depends`. Do not call it at module import time.
+
+### Node.js
+
+```text
+backend/
+├── src/
+│   ├── config/
+│   │   └── env.ts
+│   └── db/
+│       └── supabase.ts
+└── supabase/
+```
+
+Install:
 
 ```bash
-npx supabase start     # starts Postgres, Auth, Studio, and the API in Docker
-npx supabase status    # prints local URLs and keys
-npx supabase stop
+npm install @supabase/supabase-js
 ```
 
-Use the local connection string from `supabase status` in `.env` during development. Do not write a separate `docker-compose.yml` for Postgres. The CLI owns the local stack.
+`src/config/env.ts`: add `SUPABASE_URL: z.string().url()` and `SUPABASE_KEY: z.string().min(1)` to the existing Zod schema, or create the file with that schema.
 
-Link to a hosted project when the user has one:
+`src/db/supabase.ts`:
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+import { env } from '../config/env.js';
+
+export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+```
+
+### Go
+
+```text
+backend/
+├── internal/
+│   ├── config/
+│   │   └── config.go
+│   └── db/
+│       └── supabase.go
+└── supabase/
+```
+
+Install:
 
 ```bash
-npx supabase link --project-ref <project-ref>
+go get github.com/supabase-community/supabase-go
 ```
 
-## Migrations
+`internal/config/config.go`: add `SupabaseURL` and `SupabaseKey` read from `SUPABASE_URL` and `SUPABASE_KEY`. Return an error from config loading if either is empty. Create the file if it does not exist.
 
-The migration tool is chosen in `SKILL.md` Step 3. With Supabase:
+`internal/db/supabase.go`: a `NewSupabase(cfg config.Config) (*supabase.Client, error)` function that calls `supabase.NewClient(cfg.SupabaseURL, cfg.SupabaseKey, nil)`. Create the client once in `main.go` and pass it down. No package-level globals.
 
-- Native Supabase migrations: follow `supabase-migrations.md`. Recommended, especially when the project uses Supabase Auth, Storage, or RLS policies.
-- Drizzle or Prisma on Node.js: follow `drizzle.md` or `prisma.md`, pointed at `DATABASE_URL` on port 5432. Leave `supabase/migrations/` empty and say so in the README.
-- Alembic on Python or goose on Go: follow the stack reference, pointed at `DATABASE_URL` on port 5432. Leave `supabase/migrations/` empty and say so in the README.
+## Verify
 
-Whatever the choice, never let two tools write the same schema.
+- With the MCP, `select 1` already confirmed the project.
+- With real values in `.env`, start the backend and confirm it boots without config errors.
+- With placeholders, skip the connection check and say so.
 
-## Row Level Security
+## First migration
 
-Document these rules in the README for the user's future tables. Do not create any tables or policies now.
-
-- Enable RLS on every table in the `public` schema that any client could reach through the Supabase API:
-
-```sql
-alter table public.<table> enable row level security;
-```
-
-- With RLS enabled and no policies, the service role key still has full access, and anon or authenticated keys have none. That is the correct default for a backend-owned table.
-- Do not write permissive policies to make something work. Add policies only when a client-side consumer needs them, and scope them to `auth.uid()`.
-- Never duplicate `auth.users`. If the project uses Supabase Auth, application user data belongs in a `profiles` table with `id uuid primary key references auth.users(id) on delete cascade`, created by the user or by `init-auth`.
-
-## Readiness check
-
-Same contract as the stack reference. With the SDK path there are no tables to query, so request `GET {SUPABASE_URL}/rest/v1/` with the service role key as the `apikey` header and map any non-200 response or network error to 503.
-
-## Tests
-
-- Prefer the local Supabase stack from `npx supabase start` for integration tests.
-- Skip integration tests cleanly when `DATABASE_URL` or `SUPABASE_URL` is unset.
-- Never point tests at the hosted production project.
-
-## Verification
+Tell the user:
 
 ```bash
-npx supabase start
-npx supabase migration list     # native Supabase migrations, reports none
-# or the chosen tool's status command
-<stack lint, typecheck, and test commands>
-<stack dev command>              # then request /health/ready
-npx supabase stop
+supabase migration new <description>     # e.g. create_users_and_profiles
+# write SQL in supabase/migrations/<timestamp>_<description>.sql
+supabase db push
 ```
 
-Confirm the readiness endpoint returns 200 with the local stack up and 503 after `npx supabase stop`.
+With the MCP, migrations can also be applied through its migration tool. Either way, keep every schema change as a file in `supabase/migrations/`.
