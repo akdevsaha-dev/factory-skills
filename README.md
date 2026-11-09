@@ -21,22 +21,20 @@ npx skills add YOUR_USERNAME/factory-skills --skill init-backend
 Install for Codex:
 
 ```bash
-npx skills add YOUR_USERNAME/factory-skills --skill init-backend -a codex
+npx skills add akdevsaha-dev/factory-skills --skill init-backend -a codex
 ```
 
 Install for Claude Code:
 
 ```bash
-npx skills add YOUR_USERNAME/factory-skills --skill init-backend -a claude-code
+npx skills add akdevsaha-dev/factory-skills --skill init-backend -a claude-code
 ```
 
 Install globally:
 
 ```bash
-npx skills add YOUR_USERNAME/factory-skills --skill init-backend -g
+npx skills add akdevsaha-dev/factory-skills --skill init-backend -g
 ```
-
-Replace YOUR_USERNAME with your GitHub username.
 
 ## Usage
 
