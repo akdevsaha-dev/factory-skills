@@ -6,16 +6,17 @@ Build consistent, maintainable software with Claude Code, Codex, and other compa
 
 ## Available skills
 
-| Skill        | Description                                      |
-| ------------ | ------------------------------------------------ |
-| init-backend | Initialize a backend with Node.js, Python, or Go |
+| Skill         | Description                                                       |
+| ------------- | ----------------------------------------------------------------- |
+| init-backend  | Initialize a backend with Node.js, Python, or Go                  |
+| init-database | Add PostgreSQL or Supabase with migrations to an existing backend |
 
 ## Installation
 
 Install directly from GitHub:
 
 ```bash
-npx skills add YOUR_USERNAME/factory-skills --skill init-backend
+npx skills add akdevsaha-dev/factory-skills --skill init-backend
 ```
 
 Install for Codex:
