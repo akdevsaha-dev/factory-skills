@@ -54,7 +54,9 @@ Ask only when the correct destination is genuinely ambiguous.
 - Python: `references/python.md`
 - Go: `references/go.md`
 
-Read the selected reference before generating files.
+Read the selected reference and `references/code-quality.md` before generating files.
+
+The stack reference decides the folder structure and files. `references/code-quality.md` decides how the code inside them is written. This scaffold becomes the template every later feature copies, so its code must be clean, idiomatic, and easy to understand at a glance.
 
 ## Step 5: Generate the project
 
@@ -109,6 +111,7 @@ Run all relevant checks:
 5. Automated tests
 6. Application startup
 7. HTTP health endpoint smoke test
+8. Self-review: re-read every generated file against the review checklist in `references/code-quality.md`, simplify what you can, and rerun the checks after any change
 
 Do not claim a command passed unless it actually ran successfully.
 
@@ -128,7 +131,6 @@ Report:
 
 ## Engineering principles
 
-- Prefer explicit, readable code.
 - Keep HTTP handlers thin.
 - Put business logic in services.
 - Validate untrusted input at system boundaries.
@@ -136,6 +138,5 @@ Report:
 - Never commit secrets.
 - Use structured error responses.
 - Handle graceful shutdown.
-- Avoid premature abstractions.
 - Preserve existing repository conventions.
 - Never describe a scaffold as production-ready without verification.

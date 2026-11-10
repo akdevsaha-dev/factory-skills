@@ -65,6 +65,8 @@ Wait for the user's answer before Step 3.
 - Drizzle: `references/drizzle.md`
 - Supabase: `references/supabase.md`
 
+Also read `references/code-quality.md` before writing code. The option's reference decides which files to create and where; the code-quality reference decides how the code inside them is written. Match the backend's existing style: imports, naming, config access, and error handling.
+
 Every option follows the same rules:
 
 - **Config module.** Put database settings in the backend's existing config module. If it does not exist, create it:
@@ -83,6 +85,7 @@ Every option follows the same rules:
 1. Install dependencies with the stack's package manager.
 2. Run the backend's existing type check or lint.
 3. If real credentials are in `.env`, run the connection check from the reference. If only placeholders are there, skip it and say so.
+4. Re-read every file you created or changed against the review checklist in `references/code-quality.md`. Fix what it finds and rerun the checks.
 
 Do not claim a check passed unless it ran.
 

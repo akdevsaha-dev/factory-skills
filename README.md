@@ -76,3 +76,7 @@ Templates and scripts provide deterministic setup.
 Automated tests verify generated code.
 
 A successful scaffold is a foundation, not proof of production readiness.
+
+## Contributing
+
+Each skill is installed on its own, so it cannot read files from another skill. Shared standards are copied into every skill that needs them. `references/code-quality.md` is identical in `implement-feature`, `init-backend`, `init-database`, and `init-auth`: edit one, then copy it to the others.

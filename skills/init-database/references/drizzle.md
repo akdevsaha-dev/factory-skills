@@ -32,11 +32,16 @@ backend/
 import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is not set');
+}
+
 export default defineConfig({
   dialect: 'postgresql',
   schema: './src/db/schema.ts',
   out: './drizzle',
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  dbCredentials: { url: databaseUrl },
 });
 ```
 
@@ -56,7 +61,7 @@ export const db = drizzle(client, { schema });
 
 Match the existing import style of the backend for file extensions.
 
-`src/db/schema.ts`: a comment saying tables go here. No tables.
+`src/db/schema.ts`: an empty module (`export {};`). No tables and no placeholder comment; the report tells the user that tables go here.
 
 ## Environment
 
