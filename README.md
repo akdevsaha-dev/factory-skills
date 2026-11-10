@@ -6,11 +6,12 @@ Build consistent, maintainable software with Claude Code, Codex, and other compa
 
 ## Available skills
 
-| Skill         | Description                                                                    |
-| ------------- | ------------------------------------------------------------------------------ |
-| init-backend  | Initialize a backend with Node.js, Python, or Go                               |
-| init-database | Connect a backend to a database with Prisma, Drizzle, or Supabase              |
-| init-auth     | Add authentication and authorization with Supabase Auth, Clerk, or Better Auth |
+| Skill             | Description                                                                    |
+| ----------------- | ------------------------------------------------------------------------------ |
+| init-backend      | Initialize a backend with Node.js, Python, or Go                               |
+| init-database     | Connect a backend to a database with Prisma, Drizzle, or Supabase              |
+| init-auth         | Add authentication and authorization with Supabase Auth, Clerk, or Better Auth |
+| implement-feature | Implement a feature in an existing codebase to senior-engineer standards       |
 
 ## Installation
 
