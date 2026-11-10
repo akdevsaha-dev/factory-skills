@@ -121,3 +121,7 @@ You can also skip the slash command and ask in plain words: *"Use the init-auth 
 Each skill is installed on its own, so it cannot read files from another skill. Shared standards are copied into every skill that needs them. `references/code-quality.md` is identical in `implement-feature`, `init-backend`, `init-database`, and `init-auth`: edit one, then copy it to the others.
 
 `assets/demo.svg` is hand-built. Keep it to real behavior the skills have shown.
+
+## License
+
+[MIT](LICENSE)
