@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acme Shop</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      li { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #ddd; }
+      [role="alert"] { color: #b00020; }
+    </style>
+  </head>
+  <body>
+    <h1>Acme Shop</h1>
+    <p id="status" role="status">Loading products…</p>
+    <ul id="products"></ul>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

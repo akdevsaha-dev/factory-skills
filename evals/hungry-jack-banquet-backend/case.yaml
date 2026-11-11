@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: hungry-jack-banquet-backend
+expected_outcome: |
+  A backend-only change at banquet effort. Hungry Jack plans, verifies with failure scenarios, runs independent
+  correctness and security reviews, and still runs no browser checks because no page is affected.
+context:
+  scaffold_script: place-files.sh

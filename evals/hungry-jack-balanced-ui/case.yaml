@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: hungry-jack-balanced-ui
+expected_outcome: |
+  A frontend-only change in web/app.js. Hungry Jack treats a browser check of the product list page as required,
+  attempting it or reporting it as not run with the reason, and does not run database or migration checks.
+context:
+  scaffold_script: place-files.sh

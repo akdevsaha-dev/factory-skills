@@ -138,6 +138,8 @@ You can also skip the slash command and ask in plain words: *"Use the init-auth 
 
 Each skill is installed on its own, so it cannot read files from another skill. Shared standards live once in `shared/` and are copied into every skill that ships them. Edit the file in `shared/`, then run `scripts/sync-shared.sh`; `scripts/sync-shared.sh --check` fails if any copy is out of date.
 
+`scripts/eval.sh` runs the behavior tests in `evals/` with `claude plugin eval`. They are real, billed model runs in a sandbox, against the `evals/fixtures/acme-shop` app.
+
 `assets/demo.svg` is hand-built. Keep it to real behavior the skills have shown.
 
 ## License

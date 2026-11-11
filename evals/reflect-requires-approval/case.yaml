@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: reflect-requires-approval
+expected_outcome: |
+  reflect confirms the failure from the code, finds the root cause, proposes the smallest durable prevention
+  (a test or validation rule before instruction changes), and asks for approval without modifying any project file,
+  CLAUDE.md, or skill.
+context:
+  scaffold_script: place-files.sh

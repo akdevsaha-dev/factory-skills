@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: implement-feature-standalone
+expected_outcome: |
+  implement-feature works on its own: it adds GET /api/health returning {"status":"ok"} with a test, does not start
+  hungry-jack or any companion skill, and reports truthfully whether the tests ran.
+context:
+  scaffold_script: place-files.sh
