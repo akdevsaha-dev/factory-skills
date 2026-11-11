@@ -127,7 +127,7 @@ You can also skip the slash command and ask in plain words: *"Use the init-auth 
 
 ## Contributing
 
-Each skill is installed on its own, so it cannot read files from another skill. Shared standards are copied into every skill that needs them. `references/code-quality.md` is identical in `implement-feature`, `init-backend`, `init-database`, and `init-auth`: edit one, then copy it to the others.
+Each skill is installed on its own, so it cannot read files from another skill. Shared standards live once in `shared/` and are copied into every skill that ships them. Edit the file in `shared/`, then run `scripts/sync-shared.sh`; `scripts/sync-shared.sh --check` fails if any copy is out of date.
 
 `assets/demo.svg` is hand-built. Keep it to real behavior the skills have shown.
 
