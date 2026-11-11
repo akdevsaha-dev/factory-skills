@@ -35,6 +35,7 @@ That's it. The agent finds the views, reuses your existing components, matches y
 | [`init-database`](skills/init-database/SKILL.md) | Connects your backend to Postgres with Prisma, Drizzle, or Supabase | `/init-database` |
 | [`init-auth`](skills/init-auth/SKILL.md) | Adds authentication and authorization with Supabase Auth, Clerk, or Better Auth | `/init-auth` |
 | [`catch-up`](skills/catch-up/SKILL.md) | Explains what teammates changed since your last commit, grouped by feature, and what affects your work | `/catch-up` |
+| [`hungry-jack`](skills/hungry-jack/SKILL.md) | Delivers substantial, cross-system work end to end, doing only the planning, verification, and review the task needs | `/hungry-jack add refunds to orders` |
 
 ### implement-feature
 
@@ -74,6 +75,14 @@ Back from a break, or about to pull? The agent finds your last commit, reads the
 
 ```bash
 npx skills add akdevsaha-dev/factory-skills --skill catch-up
+```
+
+### hungry-jack
+
+For work too big for `implement-feature`: multi-system features, payments, authorization, background jobs, integrations, and architectural changes. Hungry Jack plans only as much as the task needs, builds it slice by slice with `implement-feature`, verifies by what the change actually affects (no browser for a backend-only change), and reviews when the risk justifies it. Choose how much optional effort to spend with `--effort snack`, `balanced` (default), `feast`, or `banquet`. Its companions, `plan-change`, `verify-work`, `simplify-code`, `review-changes`, and `reflect`, also work on their own. See the [usage guide](docs/hungry-jack.md).
+
+```bash
+npx skills add akdevsaha-dev/factory-skills --skill hungry-jack plan-change implement-feature verify-work simplify-code review-changes reflect
 ```
 
 ## Install options
